@@ -1,0 +1,24 @@
+name: dbt_test_intraday
+run-name: dbt_test_intraday
+
+on:
+  workflow_dispatch:
+    branches:
+      - "main"
+    
+concurrency:
+  group: ${{ github.workflow }}
+
+jobs:
+  called_workflow_template:
+    uses: FlipsideCrypto/fsc-evm/.github/workflows/dbt_run_template.yml@pre-release/v4-beta
+    with:
+      target: test
+      command_name: Build Recent Testing Views
+      command: |
+        dbt run -m "fsc_evm,tag:recent_test"
+      command_name_2: Run Observability & Recent Tests
+      command_2: |
+        dbt run -m "fsc_evm,tag:observability"
+        dbt test -m "fsc_evm,tag:recent_test"
+    secrets: inherit
