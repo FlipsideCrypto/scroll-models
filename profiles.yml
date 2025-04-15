@@ -1,4 +1,4 @@
-<evm_chain>:
+scroll:
   target: prod
   outputs:
     dev:
