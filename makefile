@@ -4,17 +4,38 @@ cleanup_time:
 	@set -e; \
 	rm -f package-lock.yml && dbt clean && dbt deps
 
+resume_all_gha_tasks:
+	@set -e; \
+	TASK_NAMES=""; \
+	for file in $$(find .github/workflows -name "*.yml" -type f); do \
+		filename=$$(basename "$$file" .yml); \
+		task="TRIGGER_$$(echo $$filename | tr '[:lower:]' '[:upper:]')"; \
+		if [ -z "$$TASK_NAMES" ]; then \
+			TASK_NAMES="$$task"; \
+		else \
+			TASK_NAMES="$$TASK_NAMES,$$task"; \
+		fi; \
+	done; \
+	if [ -n "$$TASK_NAMES" ]; then \
+		echo "Resuming tasks: $$TASK_NAMES"; \
+		dbt run-operation fsc_evm.alter_gha_tasks --args "{\"task_names\": \"$$TASK_NAMES\", \"task_action\": \"RESUME\"}" -t $(DBT_TARGET); \
+	else \
+		echo "No workflow files found. No tasks to resume."; \
+	fi
+
 deploy_github_actions:
 	@set -e; \
 	dbt run -s livequery_base.deploy.marketplace.github --vars '{"UPDATE_UDFS_AND_SPS":True}' -t $(DBT_TARGET); \
 	dbt run -m "fsc_evm,tag:gha_tasks" --full-refresh -t $(DBT_TARGET); \
-	dbt run-operation fsc_evm.create_gha_tasks --vars '{"START_GHA_TASKS":False}' -t $(DBT_TARGET)
+	dbt run-operation fsc_evm.create_gha_tasks --vars '{"START_GHA_TASKS":False}' -t $(DBT_TARGET) ; \
+	make resume_all_gha_tasks
 
 deploy_new_github_action:
 	@set -e; \
 	dbt run-operation fsc_evm.drop_github_actions_schema -t $(DBT_TARGET); \
 	dbt run -m "fsc_evm,tag:gha_tasks" --full-refresh -t $(DBT_TARGET); \
-	dbt run-operation fsc_evm.create_gha_tasks --vars '{"START_GHA_TASKS":False}' -t $(DBT_TARGET)
+	dbt run-operation fsc_evm.create_gha_tasks --vars '{"START_GHA_TASKS":False}' -t $(DBT_TARGET) ; \
+	make resume_all_gha_tasks
 
 deploy_livequery:
 	@set -e; \
