@@ -1,4 +1,5 @@
 DBT_TARGET ?= dev
+RECEIPTS_BY_HASH_ENABLED ?= false
 
 cleanup_time:
 	@set -e; \
@@ -40,13 +41,12 @@ deploy_livequery:
 
 deploy_chain_phase_1:
 	@set -e; \
-	read -p "Exclude receipts_by_hash? [y/n] " receipts_by_hash; \
 	dbt run -m livequery_models.deploy.core --vars '{"UPDATE_UDFS_AND_SPS": true}' -t $(DBT_TARGET); \
 	dbt run-operation fsc_evm.livequery_grants --vars '{"UPDATE_UDFS_AND_SPS": true}' -t $(DBT_TARGET); \
 	dbt run-operation fsc_evm.create_evm_streamline_udfs --vars '{"UPDATE_UDFS_AND_SPS": true}' -t $(DBT_TARGET); \
 	dbt run-operation fsc_evm.call_sample_rpc_node -t $(DBT_TARGET); \
 	if [ "$(DBT_TARGET)" != "prod" ]; then \
-		if [ "$$receipts_by_hash" = "n" ]; then \
+		if [ "$(RECEIPTS_BY_HASH_ENABLED)" = "true" ]; then \
 			dbt run -m "fsc_evm,tag:phase_1" --exclude "fsc_evm,tag:receipts" --full-refresh --vars '{"STREAMLINE_USE_DEV_FOR_EXTERNAL_TABLES":true, "MAIN_SL_NEW_BUILD_ENABLED": true, "GLOBAL_STREAMLINE_FR_ENABLED": true}' -t $(DBT_TARGET); \
 			dbt test -m "fsc_evm,tag:chainhead"; \
 			dbt run -m "fsc_evm,tag:streamline,tag:core,tag:complete" "fsc_evm,tag:streamline,tag:core,tag:realtime" --exclude "fsc_evm,tag:receipts" "fsc_evm,tag:confirm_blocks" --vars '{"MAIN_SL_NEW_BUILD_ENABLED": true, "STREAMLINE_INVOKE_STREAMS":True, "MAIN_SL_TESTING_LIMIT": 500}' -t $(DBT_TARGET); \
@@ -56,7 +56,7 @@ deploy_chain_phase_1:
 			dbt run -m "fsc_evm,tag:streamline,tag:core,tag:complete" "fsc_evm,tag:streamline,tag:core,tag:realtime" --exclude "fsc_evm,tag:receipts_by_hash" "fsc_evm,tag:confirm_blocks" --vars '{"MAIN_SL_NEW_BUILD_ENABLED": true, "STREAMLINE_INVOKE_STREAMS":True, "MAIN_SL_TESTING_LIMIT": 500}' -t $(DBT_TARGET); \
 		fi; \
 	else \
-		if [ "$$receipts_by_hash" = "n" ]; then \
+		if [ "$(RECEIPTS_BY_HASH_ENABLED)" = "true" ]; then \
 			dbt run -m "fsc_evm,tag:phase_1" --exclude "fsc_evm,tag:receipts" --full-refresh --vars '{"MAIN_SL_NEW_BUILD_ENABLED": true, "GLOBAL_STREAMLINE_FR_ENABLED": true}' -t $(DBT_TARGET); \
 			dbt test -m "fsc_evm,tag:chainhead"; \
 			dbt run -m "fsc_evm,tag:streamline,tag:core,tag:complete" "fsc_evm,tag:streamline,tag:core,tag:realtime" --exclude "fsc_evm,tag:receipts" "fsc_evm,tag:confirm_blocks" --vars '{"MAIN_SL_NEW_BUILD_ENABLED": true, "STREAMLINE_INVOKE_STREAMS":True}' -t $(DBT_TARGET); \
