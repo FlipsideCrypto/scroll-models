@@ -77,7 +77,6 @@ deploy_chain_phase_2:
 	else \
 		dbt run -m "fsc_evm,tag:phase_2" --full-refresh --vars '{"GLOBAL_STREAMLINE_FR_ENABLED": true, "GLOBAL_BRONZE_FR_ENABLED": true, "GLOBAL_SILVER_FR_ENABLED": true, "GLOBAL_GOLD_FR_ENABLED": true, "GLOBAL_NEW_BUILD_ENABLED": true}' -t $(DBT_TARGET); \
 		dbt run -m "fsc_evm,tag:streamline,tag:abis,tag:realtime" "fsc_evm,tag:streamline,tag:abis,tag:complete" --vars '{"STREAMLINE_INVOKE_STREAMS":True, "DECODER_SL_NEW_BUILD_ENABLED": true}' -t $(DBT_TARGET); \
-		make deploy_gha_tasks DBT_TARGET=$(DBT_TARGET); \
 	fi; \
 	echo "# wait ~10 minutes"; \
 	echo "# run deploy_chain_phase_3"
@@ -104,6 +103,7 @@ deploy_chain_phase_4:
 	else \
 		dbt run -m "fsc_evm,tag:phase_3" -t $(DBT_TARGET); \
 		dbt run -m "fsc_evm,tag:phase_4" --full-refresh -t $(DBT_TARGET); \
+		make deploy_gha_tasks DBT_TARGET=$(DBT_TARGET); \
 	fi; \
 
 .PHONY: cleanup_time deploy_gha_workflows_table deploy_gha_tasks deploy_new_gha_tasks deploy_livequery deploy_chain_phase_1 deploy_chain_phase_2 deploy_chain_phase_3 deploy_chain_phase_4
