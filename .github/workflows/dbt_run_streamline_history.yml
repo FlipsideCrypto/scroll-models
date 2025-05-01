@@ -5,6 +5,8 @@ on:
   workflow_dispatch:
     branches:
       - "main"
+  schedule:
+    - cron: '1 */4 * * *'  # Runs every 4 hours
 
 concurrency:
   group: ${{ github.workflow }}
