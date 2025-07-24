@@ -119,7 +119,7 @@ vars:
   # The keys correspond to dbt profiles and are case sensitive
     dev:
       API_INTEGRATION: AWS_SCROLL_API_STG_V2
-      EXTERNAL_FUNCTION_URI: hx9cb3x9ck.execute-api.us-east-1.amazonaws.com/stg/
+      EXTERNAL_FUNCTION_URI: 9gu743m2ec.execute-api.us-east-1.amazonaws.com/stg/
       ROLES:
         - AWS_LAMBDA_SCROLL_API # replace with the name of the chain
         - INTERNAL_DEV
